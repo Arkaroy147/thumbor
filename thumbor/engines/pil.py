@@ -13,6 +13,7 @@ from io import BytesIO
 from subprocess import PIPE, Popen
 from tempfile import mkstemp
 
+import piexif
 from PIL import Image, ImageDraw, ImageFile, ImageSequence, JpegImagePlugin
 from PIL import features as pillow_features
 
@@ -47,6 +48,12 @@ FORMATS = {
     ".png": "PNG",
     ".webp": "WEBP",
     ".avif": "AVIF",
+}
+
+EXIFS_COPYRIGHT = {
+    33432: "Copyright",
+    315: "Artist",
+    306: "DateTime",
 }
 
 ImageFile.MAXBLOCK = 2**25
@@ -119,6 +126,18 @@ class Engine(BaseEngine):
             return frames
 
         return img
+
+    def get_exif_copyright(self):
+        exifs = piexif.load(self.image.info.get("exif"))
+        copyright_exif = {}
+        if exifs is None or "0th" not in exifs or exifs["0th"].items() is None:
+            return None
+
+        for exif_cod, exif in exifs["0th"].items():
+            if exif_cod in EXIFS_COPYRIGHT:
+                copyright_exif[exif_cod] = exif
+
+        return piexif.dump({"0th": copyright_exif})
 
     def get_resize_filter(self):
         config = self.context.config
@@ -343,6 +362,11 @@ class Engine(BaseEngine):
 
         if self.icc_profile is not None:
             options["icc_profile"] = self.icc_profile
+
+        if self.image.info.get("exif") is not None:
+            exif_copyright = self.get_exif_copyright()
+            if exif_copyright is not None:
+                options["exif"] = exif_copyright
 
         if self.context.config.PRESERVE_EXIF_INFO:
             if self.exif is not None:

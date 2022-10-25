@@ -128,6 +128,7 @@ def run_setup(extension_modules=None):
             "colorama==0.*,>=0.4.3",
             "derpconf==0.*,>=0.8.3",
             "libthumbor==2.*,>=2.0.2",
+            "piexif==1.*,>=1.1.3",
             "Pillow>=9.0.0",
             "pytz>=2019.3.0",
             "statsd==3.*,>=3.3.0",
